@@ -71,9 +71,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify on test results
-        run: |
-          if [ "${{ needs.python-unit-tests.result }}" == "success" ]; then
-            echo "success notifications go here"
-          else
-            echo "failure notifications go here"
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ needs.python-unit-tests.result }}" === "success") {
+              console.log("✅ Python unit tests passed. No notification needed.");
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: "😈 🔥 Demonios Python Unit Tests Failed",
+                body: `
+                The Python unit tests have failed.
+
+                **Repository:** ${context.repo.repo}
+                **Branch:** ${context.ref}
+                **Commit:** ${context.sha}
+
+                Please investigate the failure.
+                `
+              });
+            }
